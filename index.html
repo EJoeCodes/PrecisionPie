@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DominoTrack ETA</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="phone-shell">
+      <div class="screen">
+
+        <!-- SPLASH SCREEN -->
+        <div id="splash-screen" class="splash-screen">
+  <img id="domino-logo" src="https://i.postimg.cc/W11mg6VS/dominos-pizza-logo.png" alt="Domino's Logo" />
+  <div class="splash-logo">PrecisionPie</div>
+  <div class="splash-name">Real-Time Carryout ETA</div>
+</div>
+
+
+        <!-- TOP ICONS -->
+        <div class="top-buttons">
+          <div id="settings-btn" class="icon-btn" title="settings">
+            <img src="https://cdn-icons-png.flaticon.com/512/3524/3524635.png" alt="settings" />
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="scroll-container">
+
+          <!-- ETA TOOL -->
+          <div id="section-order-estimator" class="section active">
+            <h2>Domino’s Item Timer</h2>
+
+            <label for="item-selector">Select item:</label>
+<select id="item-selector">
+  <option value="Pizza">Pizza</option>
+  <option value="Cheesy Bread">Cheesy Bread</option>
+  <option value="Pasta Bowl">Pasta Bowl</option>
+  <option value="Wings">Wings</option>
+</select>
+
+<!-- 🍕 Pizza Subcategory Options -->
+<div id="pizza-options" style="display:none; margin-top:10px;">
+  <p>Crust Type:</p>
+  <select id="pizza-crust">
+    <option value="Hand-Tossed">Hand-Tossed</option>
+    <option value="Stuffed Crust">Stuffed Crust</option>
+    <option value="Thin Crust">Thin Crust</option>
+    <option value="Pan-Made">Pan-Made</option>
+  </select>
+
+  <p>Pizza Size:</p>
+  <select id="pizza-size">
+    <option value="Small">Small</option>
+    <option value="Medium">Medium</option>
+    <option value="Large">Large</option>
+    <option value="Extra Large">Extra Large</option>
+  </select>
+</div>
+
+            
+          <p>Makeline Workers:</p>
+<input type="number" id="staff-count" min="1" value="1" />
+
+            <div style="margin:10px 0;">
+  <button onclick="startTrackingSession()" style="margin-bottom: 12px;">Start Tracking Session</button>
+            
+              <button onclick="clearItemEntry()">Clear</button>
+            </div>
+
+            <p id="entry-status" style="font-style:italic;">Waiting to start...</p>
+            <p id="live-timer" style="font-weight:bold; color:#0B0B45;">Current Timer: 0m 00s</p>
+            <h3>Entry Log:</h3>
+            <ul id="item-log" style="font-size:0.9em; padding-left:20px;"></ul>
+          </div>
+
+          <!-- AVERAGE TIMES -->
+          <div id="section-averages" class="section">
+            <h2>Average Time Per Item</h2>
+            <ul id="average-log" style="font-size:0.9em; padding-left:20px;"></ul>
+          </div>
+          <!-- TOTAL ESTIMATES -->
+<div id="section-total-estimates" class="section">
+  <h2>Total Time Estimates</h2>
+  <ul id="total-estimate-log" style="font-size:0.9em; padding-left:20px;"></ul>
+</div>
+
+
+        </div> <!-- end scroll-container -->
+
+        <!-- NAVIGATION -->
+        <div class="bottom-nav">
+          <div class="nav-btn" data-target="section-order-estimator">Timer</div>
+          <div class="nav-btn" data-target="section-averages">Averages</div>
+        <div class="nav-btn" data-target="section-total-estimates">Total Estimates</div>
+
+      </div>
+    </div>
+ 
+
+
+ 
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal">
+  <h3 style="margin-top:0; color:#FF6600;">Settings</h3>
+  <button onclick="stopTrackingSession()" style="margin:10px 0; padding:10px; width:100%; background:#0B0B45; color:white; border:none; border-radius:8px;">
+    Stop Tracking Session
+  </button>
+  <button onclick="resetTrackingSession()" style="margin:10px 0; padding:10px; width:100%; background:#444; color:white; border:none; border-radius:8px;">
+    Reset Tracking Session
+  </button>
+  <button onclick="document.getElementById('settings-modal').style.display='none'" style="margin-top:10px; background:none; color:#555; border:none;">
+    Close
+  </button>
+</div>
+
+  <script src="script.js"></script>
+  
+  <script>
+  document.getElementById('item-selector').addEventListener('change', function () {
+    const selected = this.value;
+    document.getElementById('pizza-options').style.display = selected === 'Pizza' ? 'block' : 'none';
+  });
+</script>
+
+</body>
+</html>
