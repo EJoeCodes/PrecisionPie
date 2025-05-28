@@ -1,183 +1,220 @@
-/* General Reset */
-html, body {
-    margin: 0;
-    padding: 0;
-    background-color: #0e5187;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow-x: hidden;
+/*************************************
+ * SPLASH SCREEN TRANSITION (No Login)
+ *************************************/
+const splashScreen = document.getElementById('splash-screen');
+
+// Force dropdown logic on load by toggling selection
+window.addEventListener('DOMContentLoaded', () => {
+  const selector = document.getElementById('item-selector');
+  if (selector) {
+    selector.value = 'Drinks'; // Temporarily select another item
+    selector.dispatchEvent(new Event('change')); // Trigger dropdown logic
+
+    setTimeout(() => {
+      selector.value = 'Pizza'; // Then switch back to Pizza
+      selector.dispatchEvent(new Event('change'));
+    }, 50); // Small delay to ensure both events fire
   }
-  
-  /* Phone Shell */
-  .phone-shell {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 95vw;
-    max-width: 900px;
-    height: 95vh;
-    background-color: #000;
-    border-radius: 35px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    overflow: hidden;
+});
+
+setTimeout(() => {
+  splashScreen.classList.add('hidden');
+  setTimeout(() => {
+    splashScreen.style.display = 'none';
+    document.querySelector('.scroll-container').style.display = 'block';
+    document.querySelector('.top-buttons').style.display = 'flex';
+    document.querySelector('.bottom-nav').style.display = 'flex';
+  }, 800);
+}, 1500);
+
+
+
+/*************************************
+ * NAVIGATION
+ *************************************/
+const navButtons = document.querySelectorAll('.nav-btn');
+const sections = document.querySelectorAll('.section');
+navButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    sections.forEach(sec => sec.classList.remove('active'));
+    const target = btn.getAttribute('data-target');
+    document.getElementById(target).classList.add('active');
+
+    if (target === 'section-averages') {
+      updateAverageList();
+    } else if (target === 'section-total-estimates') {
+      updateTotalEstimates();
+    }
+  });
+});
+
+
+/*************************************
+ * ITEM TIMER ENTRY & TRACKING (Continuous Timer)
+ *************************************/
+let itemEntries = [];
+let lastClearTime = null;
+let timerStarted = false;
+let liveTimerInterval = null;
+
+function startTrackingSession() {
+  if (!timerStarted) {
+    lastClearTime = new Date();
+    timerStarted = true;
+    document.getElementById('entry-status').textContent = 'Tracking started. Select item and click Clear after each one is made.';
+    startLiveTimer();
   }
-  
-  /* Screen */
-  .screen {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    bottom: 25px;
-    background: #fff;
-    border-radius: 30px;
-    overflow: hidden;
+}
+
+function stopTrackingSession() {
+  if (liveTimerInterval) clearInterval(liveTimerInterval);
+  timerStarted = false;
+  document.getElementById('entry-status').textContent = 'Tracking stopped.';
+  document.getElementById('live-timer').textContent = 'Current Timer: 0m 00s';
+}
+
+function resetTrackingSession() {
+  itemEntries = [];
+  lastClearTime = null;
+  timerStarted = false;
+  clearInterval(liveTimerInterval);
+  document.getElementById('entry-status').textContent = 'Tracking session reset.';
+  document.getElementById('live-timer').textContent = 'Current Timer: 0m 00s';
+  updateEntryList();
+  updateAverageList();
+}
+
+function clearItemEntry() {
+  if (!timerStarted) {
+    alert("You need to start the session first.");
+    return;
   }
-  
-  /* Splash Screen */
-  .splash-screen {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: #1a74bd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: #fff;
-    z-index: 999;
-    opacity: 1;
-    transition: opacity 0.8s ease;
+  const now = new Date();
+  const item = document.getElementById('item-selector').value;
+  const crust = document.getElementById('pizza-crust').value || '';
+  const size = document.getElementById('pizza-size').value || '';
+  const fullItem = item === 'Pizza' ? `${item} – ${crust}, ${size}` : item;
+  const staffCount = parseInt(document.getElementById('staff-count').value) || 1;
+
+  const elapsedMs = now - lastClearTime;
+  const elapsedMin = Math.floor(elapsedMs / 60000);
+  const elapsedSec = Math.round((elapsedMs % 60000) / 1000);
+
+  const clearTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+itemEntries.push({
+  name: fullItem,
+  minutes: elapsedMin,
+  seconds: elapsedSec,
+  staff: staffCount,
+  time: clearTime
+});
+
+  lastClearTime = now;
+
+  document.getElementById('entry-status').textContent = `Cleared: ${fullItem}`;
+  updateEntryList();
+  startLiveTimer();
+}
+
+function updateEntryList() {
+  const list = document.getElementById('item-log');
+  list.innerHTML = '';
+  itemEntries.forEach((entry, idx) => {
+    const row = document.createElement('li');
+    row.textContent = `${idx + 1}. ${entry.name} – ${entry.minutes}m ${entry.seconds}s (Staff: ${entry.staff}) at ${entry.time}`;
+    list.appendChild(row);
+  });
+}
+
+
+function startLiveTimer() {
+  if (liveTimerInterval) clearInterval(liveTimerInterval);
+  liveTimerInterval = setInterval(() => {
+    const now = new Date();
+    const elapsedMs = now - lastClearTime;
+    const min = Math.floor(elapsedMs / 60000);
+    const sec = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, '0');
+    document.getElementById('live-timer').textContent = `Current Timer: ${min}m ${sec}s`;
+  }, 1000);
+}
+
+function updateAverageList() {
+  const averages = {};
+
+  // Build total time and counts per item
+  itemEntries.forEach(entry => {
+    const key = `${entry.name} (Staff: ${entry.staff})`;
+    const totalSec = entry.minutes * 60 + entry.seconds;
+
+    if (!averages[key]) {
+      averages[key] = { totalTime: totalSec, count: 1 };
+    } else {
+      averages[key].totalTime += totalSec;
+      averages[key].count += 1;
+    }
+  });
+
+  // Update the average-log list
+  const averageList = document.getElementById('average-log');
+  averageList.innerHTML = '';
+
+  let count = 1;
+  for (const item in averages) {
+    const avgSec = averages[item].totalTime / averages[item].count;
+    const min = Math.floor(avgSec / 60);
+    const sec = Math.round(avgSec % 60);
+    const row = document.createElement('li');
+    row.textContent = `${count}. ${item} – Average: ${min}m ${sec}s`;
+    averageList.appendChild(row);
+    count++;
   }
-  .splash-screen.hidden {
-    opacity: 0;
-    pointer-events: none;
+}
+
+function updateTotalEstimates() {
+  const totalList = document.getElementById('total-estimate-log');
+  totalList.innerHTML = '';
+
+  const ovenTime = 7 * 60; // 7 minutes in seconds
+  const cutTime = 90;      // average 1.5 minutes in seconds
+
+  const totals = {};
+
+  itemEntries.forEach(entry => {
+    const key = `${entry.name} (Staff: ${entry.staff})`;
+    const totalSec = entry.minutes * 60 + entry.seconds;
+
+    if (!totals[key]) {
+      totals[key] = { totalTime: totalSec, count: 1 };
+    } else {
+      totals[key].totalTime += totalSec;
+      totals[key].count += 1;
+    }
+  });
+
+  let count = 1;
+  for (const item in totals) {
+    const avgPrepSec = totals[item].totalTime / totals[item].count;
+    const totalSec = avgPrepSec + ovenTime + cutTime;
+
+    const totalMin = Math.floor(totalSec / 60);
+    const totalRemSec = Math.round(totalSec % 60);
+
+    const row = document.createElement('li');
+    row.textContent = `${count}. ${item} – Estimated Total Time: ${totalMin}m ${totalRemSec}s`;
+    totalList.appendChild(row);
+    count++;
   }
-  .splash-logo {
-    font-size: 2em;
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #eb2828;
-  }
-  .splash-name {
-    font-size: 1.1em;
-    color: #fff;
-  }
-  
-  #domino-logo {
-    width: 100px;
-    height: auto;
-    animation: spin 2s linear infinite;
-    margin-bottom: 10px;
-  }
-  
-  
-  @keyframes spin {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  
-  /* Scroll Container */
-  .scroll-container {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 50px;
-    overflow-y: auto;
-    padding: 20px 15px 10px;
-    box-sizing: border-box;
-    display: none;
-  }
-  .scroll-container::-webkit-scrollbar {
-    width: 0;
-    background: transparent;
-  }
-  
-  /* Section Visibility */
-  .section { display: none; }
-  .section.active { display: block; }
-  
-  /* Top Buttons */
-  .top-buttons {
-    position: absolute;
-    top: 10px; right: 15px;
-    display: none;
-    gap: 8px;
-    z-index: 10;
-  }
-  .icon-btn {
-    width: 30px; height: 30px;
-    cursor: pointer;
-    border-radius: 6px;
-    background-color: #eb2828;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  .icon-btn img {
-    width: 16px; height: 16px;
-  }
-  
-  /* Bottom Nav */
-  .bottom-nav {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 50px;
-    background: #1a74bd;
-    display: none;
-    justify-content: space-around;
-    align-items: center;
-  }
-  .nav-btn {
-    color: #fff;
-    font-size: 0.85em;
-    cursor: pointer;
-    text-align: center;
-    padding: 6px 12px;
-    border-radius: 14px;
-  }
-  .nav-btn:hover {
-    color: #eb2828;
-    background: rgba(255,255,255,0.1);
-  }
-  
-  /* ETA Tool Styling */
-  #section-order-estimator {
-    padding: 10px;
-  }
-  #section-order-estimator input {
-    padding: 8px;
-    font-size: 1em;
-    width: 100%;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  #section-order-estimator button {
-    background: #eb2828;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 1em;
-    cursor: pointer;
-    width: 100%;
-  }
-  
-  
-  /* Settings Modal */
-  #settings-modal {
-    display: none;
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    z-index: 1001;
-    width: 90%;
-    max-width: 320px;
-    text-align: center;
-  }
-  
+}
+
+/*************************************
+ SETTINGS MODAL
+ *************************************/
+
+document.getElementById('settings-btn').addEventListener('click', function() {
+  document.getElementById('settings-modal').style.display = 'block';
+});
+
+window.logoutUser = function() {
+  location.reload();
+};
